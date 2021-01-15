@@ -4,93 +4,103 @@ using UnityEngine;
 
 public class SmartRooms : MonoBehaviour
 {
-    public static SmartRooms instance;
+    public static SmartRooms instance;//make the most recently generated room the instance
 
+    //if the room should close when entered and open when completed
     public bool closeWhenEntered;
-
     public bool openWhenEnemiesCleared;
 
+    //each door object
     public GameObject doorUp;
     public GameObject doorDown;
     public GameObject doorLeft;
     public GameObject doorRight;
 
+    //if the doors should be closed
     public bool doorUpClose;
     public bool doorDownClose;
     public bool doorLeftClose;
     public bool doorRightClose;
 
+    //every enemy
     public List<GameObject> enemiesList = new List<GameObject>();
 
+    //what to do when cleared
     public GameObject[] onClearActivate;
     public GameObject[] onClearDeActivate;
 
+    //what to do when first entered
     public GameObject[] onActiveActivate;
     public GameObject[] onActiveDeactivate;
 
+    //each posible exit
     public GameObject[] upExits;
     public GameObject[] downExits;
     public GameObject[] leftExits;
     public GameObject[] rightExits;
 
+    //each posible side room
     public GameObject[] sideRoomUp;
     public GameObject[] sideRoomDown;
     public GameObject[] sideRoomLeft;
     public GameObject[] sideRoomRight;
 
+    public bool generateRight = false, generateLeft = false, generateUp = false, generateDown = false;//where to generate a room
 
-    public bool generateRight = false, generateLeft = false, generateUp = false, generateDown = false;
+    public bool beginGenerate = false;//if it should start generation
 
-    public bool beginGenerate = false;
+    private int roomSelect;//which room is selected
 
-    private int roomSelect;
+    public List<GameObject> usedExits = new List<GameObject>();//every used exit
 
-    public List<GameObject> usedExits = new List<GameObject>();
-
+    //what to fill empty door holes with
     public GameObject upBlock;
     public GameObject downBlock;
     public GameObject leftBlock;
     public GameObject rightBlock;
 
+    //the offset from the center of the room
     public float yOffset;
     public float xOffset;
-    public float wait;
 
-    public bool firstActivate = true;
+    public float wait;//how long to wait
 
-    int Spawn = 0;
-    private float pause = 5f;
+    public bool firstActivate = true;//if this is the first activation of the room
 
-    public bool roomActive;
 
-    bool fadeOutBlack = true;
-    public SpriteRenderer fadeScreen;
+    int Spawn = 0;//number of enemies spawned
+    private float pause = 5f;//how long to pause while swapping rooms if needed
 
-    public float fadeSpeed;
+    public bool roomActive;//if the room is currently active
 
-    public int cameraSize = 5;
+    bool fadeOutBlack = true;//if it should fade to black
+    public SpriteRenderer fadeScreen;//the image to fade
+
+    public float fadeSpeed;//the speed at which to fade
 
 
     public void Awake()
     {
-        instance = this;
+        instance = this;//set this room to the instance
     }
 
     // Start is called before the first frame update
     void Start()
     {
-        beginGenerate = true;
+        beginGenerate = true;//start generation when it first enters the scene
     }
 
     // Update is called once per frame
     void Update()
     {
+        //when the layout generation is done and if this room has been told to generate more rooms
         if (SmartGeneration.instance.finished && beginGenerate)
         {
+            //if any direction has been set to generate a side room generate a room there
             if (generateRight)
             {
-                roomSelect = Random.Range(0, sideRoomRight.Length);
-                Instantiate(sideRoomRight[roomSelect], rightExits[0].transform.position + new Vector3(12.5f, 0f, 0f), rightExits[0].transform.rotation);
+                roomSelect = Random.Range(0, sideRoomRight.Length);//choose a random room from this directions array
+                Instantiate(sideRoomRight[roomSelect], rightExits[0].transform.position + new Vector3(12.5f, 0f, 0f), rightExits[0].transform.rotation);//create that room
             }
             if (generateLeft)
             {
@@ -107,8 +117,10 @@ public class SmartRooms : MonoBehaviour
                 roomSelect = Random.Range(0, sideRoomDown.Length);
                 Instantiate(sideRoomDown[roomSelect], downExits[0].transform.position - new Vector3(0f, 0f, 12.5f), downExits[0].transform.rotation);
             }
-            beginGenerate = false;
+            beginGenerate = false;//stop generating
         }
+
+        //used in the 2D version
         /*if (roomActive)
         {
             wait -= Time.deltaTime;
@@ -131,18 +143,24 @@ public class SmartRooms : MonoBehaviour
                 Camera.main.orthographicSize -= 10 * Time.deltaTime;
             }*/
         }
+
+        //if the room is active
         if (roomActive)
         {
+            //set every object in on activate deactivate to false
             foreach (GameObject activate in onActiveDeactivate)
             {
                 activate.SetActive(false);
             }
             wait = 0.75f;
         }
+        //if the room is active and the current amount of enemies spawned is 0
         if (roomActive && Spawn == 0)
         {
+            //if it should open when there are no more enemies
             if (openWhenEnemiesCleared)
             {
+                //activate each enemy in the room
                 foreach (GameObject enemy in enemiesList)
                 {
                     enemy.SetActive(true);
@@ -160,9 +178,10 @@ public class SmartRooms : MonoBehaviour
         }*/
 
 
-
+        //if there are enemies left in the room
         if (enemiesList.Count > 0 && roomActive && openWhenEnemiesCleared)
         {
+            //go through each enemy in the list and check if it still exists, if it has died remove it from the list
             for (int i = 0; i < enemiesList.Count; i++)
             {
                 if (enemiesList[i] == null)
@@ -172,9 +191,12 @@ public class SmartRooms : MonoBehaviour
                 }
 
             }
+
+            //if there are no enemies left in the room open the doors
             if (enemiesList.Count == 0)
             {
                 OpenDoors();
+                //activate or deactivate everything that should be activated/deactivated when the enemies are defeated
                 foreach (GameObject toDo in onClearActivate)
                 {
                     toDo.SetActive(true);
@@ -188,9 +210,13 @@ public class SmartRooms : MonoBehaviour
             }
         }
     }
+
+    //this is the function for opening the doors
     public void OpenDoors()
     {
-        roomActive = false;
+        roomActive = false;//deactivate the room
+
+        //open any closed doors
         if (doorDownClose)
         {
             doorDown.SetActive(false);
@@ -210,14 +236,15 @@ public class SmartRooms : MonoBehaviour
         closeWhenEntered = false;
     }
 
+    //this function is called when a player enters the room
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Player")
+        if (other.tag == "Player")//check that the player activated it
         {
-            roomActive = true;
+            roomActive = true;//set the room to active
             //CameraControl.instance.ChangeTarget(transform);
 
-
+            //close all doors 
             if (closeWhenEntered)
             {
                 if (doorDownClose)
@@ -240,6 +267,8 @@ public class SmartRooms : MonoBehaviour
 
         }
     }
+
+    //called when the player exits the room
     private void OnTriggerExit(Collider other)
     {
         if (other.tag == "Player")

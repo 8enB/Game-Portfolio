@@ -6,13 +6,14 @@ public class SmartGeneration : MonoBehaviour
 {
     //public GameObject layoutRoom;
     //public Color startColor, endColor;
-    public static SmartGeneration instance;
+    public static SmartGeneration instance;//mark this generator as the instance
 
-    public int distanceToEnd;
-    public int totalRooms;
+    public int distanceToEnd;//shortest distance to the end room
+    public int totalRooms;//total rooms to generate
 
-    public Transform generatorPoint;
+    public Transform generatorPoint;//the position to generate the room
 
+    //the possible, selected direction, and last direction
     public enum Direction { up, down, right, left };
     public int selectedAxis;
     public Direction selectedDirection;
@@ -23,19 +24,20 @@ public class SmartGeneration : MonoBehaviour
     // public float xOffset; 
     // public float yOffset;
 
-    public LayerMask whatIsRoom;
+    public LayerMask whatIsRoom;//what layer the rooms on
 
-    private List<GameObject> layoutRoomObjects = new List<GameObject>();
+    private List<GameObject> layoutRoomObjects = new List<GameObject>();//list of every room
 
+    //exits
     public GameObject[] currentExitsUp;
     public GameObject[] currentExitsRight;
     public GameObject[] currentExitsDown;
     public GameObject[] currentExitsLeft;
     public int selectedExit;
 
-    private GameObject newRoom;
+    private GameObject newRoom;//the newest room
 
-    //unused
+    //unused for now
     // public RoomPrefabsUp roomsUp;
     // public RoomPrefabsDown roomsDown;
     // public RoomPrefabsLeft roomsLeft;
@@ -43,43 +45,48 @@ public class SmartGeneration : MonoBehaviour
 
     //private List<GameObject> generatedOutlines = new List<GameObject>();
 
-    public GameObject startRoom;
+    public GameObject startRoom;//the starting room
 
+    //arrays of possible boss rooms
     public GameObject[] bossRoomsUp;
     public GameObject[] bossRoomsDown;
     public GameObject[] bossRoomsLeft;
     public GameObject[] bossRoomsRight;
 
+    //arrays of possible rooms
     public GameObject[] potentialRoomsUp;
     public GameObject[] potentialRoomsDown;
     public GameObject[] potentialRoomsLeft;
     public GameObject[] potentialRoomsRight;
 
+    //arrays of possible corridoors
     public GameObject corridoorRight;
     public GameObject corridoorLeft;
     public GameObject corridoorUp;
     public GameObject corridoorDown;
 
-    private int distanceSinceSide = 1;
+    private int distanceSinceSide = 1;//how long it's been since side rooms were last generated
 
-    public bool finished = false;
+    public bool finished = false;//if generation is over
 
-    private int roomSelect;
+    private int roomSelect;//selected room
 
     public void Awake()
     {
-        instance = this;
+        instance = this;//set this to the instance
     }
 
     // Start is called before the first frame update
     void Start()
     {
-        newRoom = Instantiate(startRoom, generatorPoint.position, generatorPoint.rotation);
+        newRoom = Instantiate(startRoom, generatorPoint.position, generatorPoint.rotation);//set the first room to the start room
 
+        //generate the first room
+        selectedDirectionX = (Direction)Random.Range(2, 4);//select a horizontal direction
+        selectedDirectionY = (Direction)Random.Range(0, 2);//select a vertical direction
+        selectedAxis = Random.Range(0, 2);//choose one of the selected directions
 
-        selectedDirectionX = (Direction)Random.Range(2, 4);
-        selectedDirectionY = (Direction)Random.Range(0, 2);
-        selectedAxis = Random.Range(0, 2);
+        //determain what direction is selected
         if (selectedAxis == 0)
         {
             selectedDirection = selectedDirectionX;
@@ -88,6 +95,7 @@ public class SmartGeneration : MonoBehaviour
         {
             selectedDirection = selectedDirectionY;
         }
+        //depending on what direction is selected create an exit hole in the previous room
         if (selectedDirection == Direction.up)
         {
             SmartRooms.instance.upBlock.SetActive(false);
@@ -104,10 +112,12 @@ public class SmartGeneration : MonoBehaviour
         {
             SmartRooms.instance.rightBlock.SetActive(false);
         }
+
         //lastDirection = selectedDirection;
 
-        MoveGenerationPoint();
+        MoveGenerationPoint();//move the position to make the room
 
+        //generate the remaining rooms
         for (int i = 0; i < distanceToEnd; i++)
         {
             if (i + 1 != distanceToEnd)
@@ -252,6 +262,7 @@ public class SmartGeneration : MonoBehaviour
 
             }
 
+            //unused for now
             // if(i+1==distanceToEnd)
             // {
             //      //    newRoom.GetComponent<SpriteRenderer>().color = endColor;
